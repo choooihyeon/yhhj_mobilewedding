@@ -6,8 +6,7 @@
   'use strict';
 
   // ── Helpers ──
-  const $ = (sel, ctx = document) => ctx.querySelector(sel);
-  const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
+  const $ = (sel, ctx = document) => ctx.querySelector(sel);   const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
 
   function formatDate(dateStr) {
     const d = new Date(dateStr);
@@ -351,7 +350,7 @@
     ).join('');
   }
 
-  // ── Gallery (rendered after auto-detection) ──
+  // ── Gallery (rendered after auto-detection & optimized with event delegation) ──
   let galleryAllImages = [];
 
   function buildGallery(images) {
@@ -361,7 +360,6 @@
     galleryAllImages = images;
 
     if (images.length === 0) {
-      // Hide entire gallery section if no images found
       const gallerySection = grid.closest('.gallery');
       if (gallerySection) gallerySection.style.display = 'none';
       return;
@@ -369,19 +367,22 @@
 
     const initialCount = 6;
 
+    // 순수 HTML 렌더링만 처리
     function renderImages(count) {
       grid.innerHTML = images.slice(0, count).map((src, i) =>
         `<div class="gallery-item" data-index="${i}">
           <img src="${src}" alt="Gallery photo ${i + 1}" loading="lazy">
         </div>`
       ).join('');
-
-      $$('.gallery-item', grid).forEach(item => {
-        item.addEventListener('click', () => {
-          openModal(images, parseInt(item.dataset.index));
-        });
-      });
     }
+
+    // 부모 컨테이너(grid)에 클릭 이벤트를 1회만 등록 (이벤트 위임 기법으로 렉 방지)
+    grid.onclick = (e) => {
+      const item = e.target.closest('.gallery-item');
+      if (item && item.dataset.index !== undefined) {
+        openModal(images, parseInt(item.dataset.index, 10));
+      }
+    };
 
     renderImages(Math.min(initialCount, images.length));
 
@@ -586,12 +587,8 @@
       { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
     );
 
-    $$('.fade-in').forEach(el => scrollObserver.observe(el));
-  }
-
-  function reobserveAnimations() {
-    if (!scrollObserver) return;
-    $$('.fade-in:not(.visible)').forEach(el => scrollObserver.observe(el));
+    $$('.fade-in').forEach(el => scrollObserver.observe(el));   }    function reobserveAnimations() {     if (!scrollObserver) return;     $$
+('.fade-in:not(.visible)').forEach(el => scrollObserver.observe(el));
   }
 
   // ── Init ──
